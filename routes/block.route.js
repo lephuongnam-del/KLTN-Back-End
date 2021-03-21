@@ -6,18 +6,7 @@ const Resident = require('../models/resident')
 const HELPER = require('../helper')
 
 
-// get all block
-router.get('/', (req, res) => {
-    Block.find({
-        _Id: req.blockId
-    }).skip().limit().then((lists) => {
-        res.send(lists);
-    }).catch((e) => {
-        res.send(e);
-    });
-})
-
-router.get('/test', async (req, res) => {
+router.get('/', async (req, res) => {
     const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
     const filterField = {
