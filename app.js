@@ -12,13 +12,15 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 //import router
-const usersRoute = require('./routes/user');
-const buildingRoute = require('./routes/building');
-
+const blockRoute = require('./routes/block.route');
+const apartmentRoute = require('./routes/apartment.route');
+const residentRoute = require('./routes/resident.route');
 
 //use routes
-app.use('/api/users',usersRoute);
-app.use('api/building', buildingRoute);
+app.use('/api/block',blockRoute);
+app.use('/api/apartment', apartmentRoute);
+app.use('/api/resident',residentRoute);
+
 
 // enable CORS
 app.use(function(req, res, next) {
