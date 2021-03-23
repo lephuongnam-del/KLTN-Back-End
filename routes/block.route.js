@@ -3,8 +3,6 @@ const router = express.Router();
 const Block = require('../models/block');
 const HELPER = require('../helper')
 
-
-// get all block
 router.get('/', async (req, res) => {
     const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
