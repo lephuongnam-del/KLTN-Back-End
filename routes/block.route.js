@@ -6,13 +6,11 @@ const APartment = require('../models/apartment');
 const Resident = require('../models/resident');
 
 router.get('/', async (req, res) => {
+    const match = {};
     const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
-    const Name = req.query.name;
-    const match = {
-        name:Name ? {'$regex' : `${Name}`, '$options' : 'i'} : { $in: [new RegExp(Name)] }
-    }
-
+    if(req.query.name) match.name = { '$regex': `${req.query.name}`, '$options': 'i' };
+    
     let blocks = await HELPER.filterByField(Block, match, start, limit);
     let total = await HELPER.getTotal(Block, match);
     res.send({

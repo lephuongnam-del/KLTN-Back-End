@@ -8,22 +8,19 @@ const mongoose = require('mongoose');
 const ObjectId = require('mongoose').Types.ObjectId;
 //get all apartment in a block
 router.get('/', async (req, res) => {
+    const match = {};
     const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
-    const id= req.query.blockId;
-    const Name = req.query.name;
-    const match = {
-         name:Name ? {'$regex' : `${Name}`, '$options' : 'i'} : { $in: [new RegExp(Name)] },
-         blockId: ObjectId(id)
-    }
+    if (req.query.name) match.name = { '$regex': `${req.query.name}`, '$options': 'i' };
+    if (req.query.blockId) match.blockId = ObjectId(req.query.blockId);
+
     let apartments = await HELPER.filterByField(Apartment, match, start, limit);
     let result = await formatApartment(apartments);
     let total = await HELPER.getTotal(Apartment, match);
     res.send({
         total,
         items: result
-    }
-    );
+    });
 });
 
 
