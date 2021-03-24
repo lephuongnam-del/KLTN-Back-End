@@ -1,10 +1,9 @@
-const filterByField = async (schema, match, sorting, start, limit) => {
-    const aggregationPaginated = [
+
+const filterByField = async (schema, match, start, limit) => {
+
+    let aggregationPaginated = [
         {
             $match: match
-        },
-        {
-            $sort: sorting
         },
         {
             $limit: start + limit
@@ -13,9 +12,10 @@ const filterByField = async (schema, match, sorting, start, limit) => {
             $skip: start
         }
     ];
-
     const result = await schema.aggregate(aggregationPaginated);
     return result;
+
+
 }
 const getTotal = async (schema, match) => {
     const aggregation = [
@@ -27,7 +27,7 @@ const getTotal = async (schema, match) => {
         }
     ];
     let result = await schema.aggregate(aggregation);
-    return result[0].total;
+    return result[0]?.total ? result[0].total : 0;
 }
 
 module.exports = {

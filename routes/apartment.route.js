@@ -4,72 +4,81 @@ const Apartment = require('../models/apartment');
 const HELPER = require('../helper');
 const Resident = require('../models/resident');
 const Block = require('../models/block');
-
+const mongoose = require('mongoose');
+const ObjectId = require('mongoose').Types.ObjectId;
 //get all apartment in a block
-router.get('/',async (req,res) =>{
+router.get('/', async (req, res) => {
     const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
-    const filterField = {
-        name: { $in: [new RegExp(req.query.name)] },
-        blockId: req.query.blockId
-     }
-
-     console.log(filterField);
-    let apartments = await HELPER.filterByField(Apartment,filterField,start,limit);
+    const id= req.query.blockId;
+    const Name = req.query.name;
+    const match = {
+         name:Name ? {'$regex' : `${Name}`, '$options' : 'i'} : { $in: [new RegExp(Name)] },
+         blockId: ObjectId(id)
+    }
+    let apartments = await HELPER.filterByField(Apartment, match, start, limit);
     let result = await formatApartment(apartments);
-    
-    res.send(result);
+    let total = await HELPER.getTotal(Apartment, match);
+    res.send({
+        total,
+        items: result
+    }
+    );
 });
 
 
 formatApartment = async (apartments) => {
-    let tmpApartment = [];
-    for ( let i of apartments)
-    {
-        const block = await Block.find({_id:i.blockId});
-        const residentList = await Resident.find({ aptId: i._id });
-        let blockName;
-        for (let j of block)
-        {
-            blockName= j.name;
-            console.log(blockName)
-        }
-        el = { ...i._doc, blockName,totalResident:residentList.length};
-         console.log(el)
-         tmpApartment.push({...el});
+    let tmpApt = [];
+    for (let i of apartments) {
+        const block = await Block.find({ _id: i.blockId });
+        el = { ...i, blockName: block[0].name }
+        tmpApt.push(el);
+
     }
-    return tmpApartment;
+
+    return tmpApt;
+
 }
 
+// get single apartment 
+router.get('/:name', async (req, res) => {
+    let id = req.params.id;
+    const apartment = await Apartment.findById({ _id: id });
+    const block = await Block.find({ _id: apartment.blockId });
+    const residentList = await Resident.find({ aptId: apartment._id });
+    result = { apartment, blockName: block[0].name, totalResident: residentList.length }
+    res.send(result);
 
+
+})
 
 
 // create new apartment
-router.post('/',(req,res) =>{
+router.post('/', (req, res) => {
     console.log(req.body);
-    var newApt = new Apartment (req.body);
+    var newApt = new Apartment(req.body);
     newApt.save()
-               .then(user => {res.status(200).json(user)})
-               .catch(function(err){
-                return res.status(501).json({message: 'Error create.'})
-                })
-   
+        .then(user => { res.status(200).json(user) })
+        .catch(function (err) {
+            return res.status(501).json({ message: 'Error create.' })
+        })
+
 })
 
 // update apartment
 
-router.patch('/:id',(req,res) => {
-    Apartment.findOneAndUpdate({_id:req.params.id},{$set:req.body})
-             .then(() => res.send('update successful'))
-             .catch(err => res.send(err))
+router.patch('/:id', (req, res) => {
+    Apartment.findOneAndUpdate({ _id: req.params.id }, { $set: req.body })
+        .then(() => res.send('update successful'))
+        .catch(err => res.send(err))
 })
 
 
 //delete apartment
-router.delete('/:id',(req,res) => {
-    Apartment.findByIdAndRemove({ _id:req.params.id})
-             .then(() => res.send('delete successful'))
-             .catch(err => res.send(err));
+router.delete('/:id', (req, res) => {
+    Apartment.findByIdAndRemove({ _id: req.params.id })
+        .then(() => res.send('delete successful'))
+        .catch(err => res.send(err));
 })
 
 module.exports = router;

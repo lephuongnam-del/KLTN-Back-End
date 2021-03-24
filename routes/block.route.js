@@ -1,16 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const Block = require('../models/block');
-const HELPER = require('../helper')
+const HELPER = require('../helper');
+const APartment = require('../models/apartment');
+const Resident = require('../models/resident');
 
 router.get('/', async (req, res) => {
     const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
+    const Name = req.query.name;
     const match = {
-        name: { $in: [new RegExp(req.query.name)] }
+        name:Name ? {'$regex' : `${Name}`, '$options' : 'i'} : { $in: [new RegExp(Name)] }
     }
-    const sort = { name: 1 };
-    let blocks = await HELPER.filterByField(Block, match, sort , start, limit);
+
+    let blocks = await HELPER.filterByField(Block, match, start, limit);
     let total = await HELPER.getTotal(Block, match);
     res.send({
         total,
@@ -19,12 +22,18 @@ router.get('/', async (req, res) => {
 })
 
 // get single block
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     let blockId = req.params.id;
+    const block = await Block.findById({ _id: blockId });
+    const apartment = await APartment.find({ blockId: block._id });
+    let totalResident = 0;
+    for (let i of apartment) {
+        totalResident += await Resident.find({ aptId: i._id }).count();
+    }
 
-    Block.findById({ _id: blockId })
-        .then((block) => { res.send(block) })
-        .catch((err) => { res.send(err) })
+    result = { block, totalApartment: apartment.length, totalResident };
+    res.send(result);
+
 })
 
 // create  new information of block
