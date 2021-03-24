@@ -30,23 +30,18 @@ formatApartment = async (apartments) => {
         const block = await Block.find({ _id: i.blockId });
         el = { ...i, blockName: block[0].name }
         tmpApt.push(el);
-
     }
-
     return tmpApt;
-
 }
 
 // get single apartment 
-router.get('/:name', async (req, res) => {
+router.get('/:id', async (req, res) => {
     let id = req.params.id;
     const apartment = await Apartment.findById({ _id: id });
     const block = await Block.find({ _id: apartment.blockId });
     const residentList = await Resident.find({ aptId: apartment._id });
     result = { apartment, blockName: block[0].name, totalResident: residentList.length }
     res.send(result);
-
-
 })
 
 

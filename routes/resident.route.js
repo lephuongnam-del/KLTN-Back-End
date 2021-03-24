@@ -3,7 +3,7 @@ const router = express.Router();
 const Apartment = require('../models/apartment');
 const Resident =require('../models/resident');
 
-//get all apartment in a block
+//get all resident
 router.get('/',(req,res) =>{
     Resident.find({
         _Id: req.resident_id
@@ -14,7 +14,12 @@ router.get('/',(req,res) =>{
     });
 });
 
-// create new apartment
+
+// get single resident
+
+
+
+// create new resident
 router.post('/',(req,res) =>{
     console.log(req.body);
     var newresident = new Resident (req.body);
@@ -25,5 +30,9 @@ router.post('/',(req,res) =>{
                 })
    
 })
+
+
+// update resident
+
 
 module.exports = router;
