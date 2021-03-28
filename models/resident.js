@@ -1,16 +1,15 @@
 const mongoose = require('mongoose');
-
 const residentSchema = new mongoose.Schema({
 
     aptId:{
        type: mongoose.Types.ObjectId,
        required: true
     },
-    firstName:{
+    aptName:{
         type:String,
         required:true
     },
-    lastName:{
+    name:{
         type:String,
         required:true
     },
@@ -25,7 +24,6 @@ const residentSchema = new mongoose.Schema({
     note:{
         type:String
     }
-
 })
 
 module.exports = mongoose.model('Resident',residentSchema)

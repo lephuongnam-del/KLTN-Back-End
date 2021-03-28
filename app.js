@@ -16,12 +16,13 @@ app.use(bodyParser.json());
 const blockRoute = require('./routes/block.route');
 const apartmentRoute = require('./routes/apartment.route');
 const residentRoute = require('./routes/resident.route');
+const vehicleRoute = require('./routes/vehicle.route');
 
 //use routes
 app.use('/api/block',blockRoute);
 app.use('/api/apartment', apartmentRoute);
 app.use('/api/resident',residentRoute);
-
+app.use('/api/vehicle',vehicleRoute);
 
 // enable CORS
 app.use(function(req, res, next) {
@@ -31,14 +32,9 @@ app.use(function(req, res, next) {
     next();
 });
 
-
-
-
 app.get('/',(req,res)=>{
     res.send('welcome');
 });
-
-
 
 app.listen(port,() => {
     console.log("app running on port "+ port);
