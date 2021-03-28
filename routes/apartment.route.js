@@ -23,12 +23,11 @@ router.get('/', async (req, res) => {
     });
 });
 
-
 formatApartment = async (apartments) => {
     let tmpApt = [];
     for (let i of apartments) {
-        const block = await Block.find({ _id: i.blockId });
-        el = { ...i, blockName: block[0].name }
+        // const block = await Block.find({ _id: i.blockId });
+        el = { ...i, blockName: 'block[0].name' }
         tmpApt.push(el);
     }
     return tmpApt;

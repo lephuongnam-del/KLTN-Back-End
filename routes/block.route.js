@@ -29,18 +29,17 @@ router.get('/:id', async (req, res) => {
         totalResident += await Resident.find({ aptId: i._id }).count();
     }
 
-    result = { block, totalApartment: apartment.length, totalResident };
+    result = { ...block._doc, totalApartment: apartment.length, totalResident };
     res.send(result);
 
 })
 
 // create  new information of block
 
-router.post('/', (req, res) => {
+router.post('/', async(req, res) => {
     console.log(req.body);
     let newBlock = new Block(req.body);
     newBlock.save().then((newBlock) => { res.send(newBlock) }).catch((e) => { res.send(e) });
-
 })
 
 //update block

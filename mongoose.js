@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
-const url="mongodb://localhost:27017/backEnd";
-//const url="mongodb+srv://dbAdmin:23A7koOfUgXggvkB@cluster0.zbpes.mongodb.net/KLTN-db?retryWrites=true&w=majority";
+// const url="mongodb://localhost:27017/backEnd";
+const url="mongodb+srv://dbAdmin:23A7koOfUgXggvkB@cluster0.zbpes.mongodb.net/KLTN-db?retryWrites=true&w=majority";
 
 mongoose.connect(url, { useNewUrlParser: true,useUnifiedTopology: true })
     .then(() => {
