@@ -38,7 +38,6 @@ router.get('/:id', async (req, res) => {
 
 
 // create new resident
-// chua test
 router.post('/', async (req, res) => {
     console.log(req.body);
     const apartment = await Apartment.find({_id: req.body.aptId});
