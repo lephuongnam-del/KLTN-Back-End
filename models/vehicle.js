@@ -14,7 +14,7 @@ const vehicleSchema = new mongoose.Schema({
         required:true
     },
     status:{
-        type:Boolean,
+        type:String,
         default:false
     },
     type: {
