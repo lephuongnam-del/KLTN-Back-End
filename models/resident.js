@@ -1,6 +1,13 @@
 const mongoose = require('mongoose');
 const residentSchema = new mongoose.Schema({
-
+    blockId:{
+        type: mongoose.Types.ObjectId,
+        required: true
+    },
+    blockName:{
+        type: String,
+        required: true
+    },
     aptId:{
        type: mongoose.Types.ObjectId,
        required: true
