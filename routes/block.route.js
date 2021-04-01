@@ -55,12 +55,29 @@ router.patch('/:id', (req, res) => {
 
 
 // delete block
-router.delete('/:id', (req, res) => {
-    Block.findOneAndRemove({
-        _id: req.params.id
-    }).then(() => {
-        res.send({ 'message': 'delete successfully' });
-    }).catch(err => res.send(err));
+router.post('/delete',async (req, res) => {
+   let ids = req.body.ids;
+   for(let i of ids)
+   {
+        const apartments = await APartment.find({blockId:i})   
+        for(let el of apartments)
+        {
+            const residents =  await Resident.find({aptId:el});
+            for(let j of residents)
+            {
+                Vehicle.findOneAndRemove({ residentId: j._id }).then(() => {
+                    Resident.findOneAndRemove({ aptId: i }).then(
+                        Apartment.findOneAndRemove({blockId:el}).then(
+                            Block.findOneAndRemove({_id:i}).then(() => res.send('deleted'))
+                        )
+                    )
+        
+                })
+            }
+        }
+
+   }
+
 });
 
 module.exports = router;

@@ -46,8 +46,8 @@ router.post('/', async (req, res) => {
     newVehicle.save().then(vehicle => res.json(vehicle))
         .catch(err => res.send(err))
 })
-// update vehicle
 
+// update vehicle
 router.patch('/:d', (req, res) => {
     let id = req.params.id;
     Vehicle.findByIdAndRemove({ _id: id }, { $set: req.body })
@@ -56,6 +56,12 @@ router.patch('/:d', (req, res) => {
 })
 
 // delete vehicle
+router.delete('/:id', (req,res) => {
+    let id = req.params.id;
+    Vehicle.findOneAndRemove({_id:id})
+            .then(() => res.send('delete successful'))
+            .catch((err) => res.send(err))
+});
 
 module.exports = router;
 

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Apartment = require('../models/apartment');
 const Resident = require('../models/resident');
-const Block = require('../models/block');
+const Vehicle = require('../models/vehicle');
 const HELPER = require('../helper');
 const ObjectId = require('mongoose').Types.ObjectId;
 
@@ -40,7 +40,7 @@ router.get('/:id', async (req, res) => {
 // create new resident
 router.post('/', async (req, res) => {
     console.log(req.body);
-    const apartment = await Apartment.find({_id: req.body.aptId});
+    const apartment = await Apartment.find({ _id: req.body.aptId });
     req.body.aptName = apartment[0].name;
     var newResident = new Resident(req.body);
     newResident.save()
@@ -53,14 +53,23 @@ router.post('/', async (req, res) => {
 
 
 // update resident
-router.patch('/:id',(req,res) => {
+router.patch('/:id', (req, res) => {
     let id = req.params.id;
-    Resident.findByIdAndUpdate({_id:id},{$set:req.body})
-            .then(() => res.send('update successful'))
-            .catch((err)=> res.send(err))
+    Resident.findByIdAndUpdate({ _id: id }, { $set: req.body })
+        .then(() => res.send('update successful'))
+        .catch((err) => res.send(err))
 })
 
 
 // delete resident
+router.post('/delete', async (req, res) => {
+    let ids = req.body.ids;
+    for (let i of ids) {
+        Vehicle.findOneAndRemove({ residentId: i._id }).then(() => {
+            Resident.findOneAndRemove({ _id: i }).then(() => res.send('deleted'))
+
+        })
+    }
+})
 
 module.exports = router;
