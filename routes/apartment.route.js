@@ -24,15 +24,16 @@ router.get('/', async (req, res) => {
         items: apartments
     });
 });
-
-
-
 // get single apartment 
 router.get('/:id', async (req, res) => {
     let id = req.params.id;
     const apartment = await Apartment.findById({ _id: id });
     const residentList = await Resident.find({ aptId: apartment._id });
-    result = { apartment, totalResident: residentList.length }
+    let totalVehicle = 0;
+    for(let i of residentList){
+       let tmp = await Vehicle.find({ residentId: i._id });
+    }
+    result = { ...apartment._doc, totalResident: residentList.length, totalVehicle }
     res.send(result);
 })
 
@@ -53,8 +54,9 @@ router.post('/',async (req, res) => {
 // update apartment
 
 router.patch('/:id', (req, res) => {
+    console.log(req.body)
     Apartment.findOneAndUpdate({ _id: req.params.id }, { $set: req.body })
-        .then(() => res.send('update successful'))
+        .then((data) => res.send(data))
         .catch(err => res.send(err))
 })
 
