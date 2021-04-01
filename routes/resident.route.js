@@ -71,5 +71,14 @@ router.patch('/:id', async (req, res) => {
 
 
 // delete resident
+router.post('/delete', async (req, res) => {
+    let ids = req.body.ids;
+    for (let i of ids) {
+        Vehicle.findOneAndRemove({ residentId: i._id }).then(() => {
+            Resident.findOneAndRemove({ _id: i }).then(() => res.send('deleted'))
+
+        })
+    }
+})
 
 module.exports = router;

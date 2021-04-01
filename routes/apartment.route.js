@@ -62,10 +62,25 @@ router.patch('/:id', (req, res) => {
 
 
 //delete apartment
-router.delete('/:id', (req, res) => {
-    Apartment.findByIdAndRemove({ _id: req.params.id })
-        .then(() => res.send('delete successful'))
-        .catch(err => res.send(err));
+router.post('/delete', async (req, res) => {
+   let ids = req.body.ids;
+  
+    for(let i of ids)
+    {
+        
+        const residents =  await Resident.find({aptId:i});
+        for(let j of residents)
+        {
+            Vehicle.findOneAndRemove({ residentId: j._id }).then(() => {
+                Resident.findOneAndRemove({ aptId: i }).then(
+                    Apartment.findOneAndRemove({_id:i}).then(() => res.send('deleted'))
+                )
+    
+            })
+        }
+
+    }
+
 })
 
 module.exports = router;
