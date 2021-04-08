@@ -1,36 +1,42 @@
 const mongoose = require('mongoose');
 const residentSchema = new mongoose.Schema({
-    blockId:{
+    blockId: {
         type: mongoose.Types.ObjectId,
         required: true
     },
-    blockName:{
+    aptId: {
+        type: mongoose.Types.ObjectId,
+        required: true
+    },
+    name: {
         type: String,
         required: true
     },
-    aptId:{
-       type: mongoose.Types.ObjectId,
-       required: true
+    identityCard: {
+        type: String
     },
-    aptName:{
-        type:String,
-        required:true
-    },
-    name:{
-        type:String,
-        required:true
-    },
-    identityCard:{
-        type:String,
+    type: {
+        type: String,
         required: true
     },
-    type:{
-        type:String,
-        required:true
+    phoneNumber: {
+        type: String
     },
-    note:{
-        type:String
+    email: {
+        type: String,
+        trim: true,
+        unique: true
+    }, 
+    dateOfBirth:{
+        type: Number,
+        required: true
+    },
+    note: {
+        type: String
+    },
+    accountId: {
+        type: mongoose.Types.ObjectId
     }
 })
 
-module.exports = mongoose.model('Resident',residentSchema)
+module.exports = mongoose.model('Resident', residentSchema)
