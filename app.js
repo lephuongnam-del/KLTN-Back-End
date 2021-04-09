@@ -18,13 +18,18 @@ const apartmentRoute = require('./routes/apartment.route');
 const residentRoute = require('./routes/resident.route');
 const vehicleRoute = require('./routes/vehicle.route');
 const serviceRoute = require('./routes/service.route');
-
+const serviceRegisterRoute = require('./routes/serviceRegister.route');
+const paymentRoute = require('./routes/paymentMethod.route');
+const billRoute = require('./routes/bill.route');
 //use routes
 app.use('/api/block',blockRoute);
 app.use('/api/apartment', apartmentRoute);
 app.use('/api/resident',residentRoute);
 app.use('/api/vehicle',vehicleRoute);
 app.use('/api/service',serviceRoute);
+app.use('/api/serviceRegister',serviceRegisterRoute);
+app.use('/api/payment',paymentRoute);
+app.use('/api/bill',billRoute);
 
 // enable CORS
 app.use(function(req, res, next) {

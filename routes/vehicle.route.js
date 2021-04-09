@@ -40,7 +40,9 @@ router.get('/:id', async (req, res) => {
 
 // create vehicle
 router.post('/', async (req, res) => {
+    console.log(req.body);
     let resident  = await Resident.find({_id: req.body.residentId});
+    console.log(resident)
     req.body.residentName = resident[0].name;
     let newVehicle = new Vehicle(req.body);
     newVehicle.save().then(vehicle => res.json(vehicle))
