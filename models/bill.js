@@ -18,8 +18,7 @@ const billSchema = new mongoose.Schema({
         required: true
     },
     amount:{
-        type:Number,
-        required:true
+        type:Number
     }
 
 })

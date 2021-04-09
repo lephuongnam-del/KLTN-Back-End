@@ -18,9 +18,12 @@ const apartmentRoute = require('./routes/apartment.route');
 const residentRoute = require('./routes/resident.route');
 const vehicleRoute = require('./routes/vehicle.route');
 const serviceRoute = require('./routes/service.route');
+const residentAccountRouter = require('./routes/resident-account.route');
 const serviceRegisterRoute = require('./routes/serviceRegister.route');
-const paymentRoute = require('./routes/paymentMethod.route');
+const paymentRoute = require ('./routes/paymentMethod.route');
 const billRoute = require('./routes/bill.route');
+
+
 //use routes
 app.use('/api/block',blockRoute);
 app.use('/api/apartment', apartmentRoute);

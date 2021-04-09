@@ -12,20 +12,19 @@ router.get('/', async (req, res) => {
     const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
     const match = {};
-
     // query
     if (req.query.residentId) match.residentId = ObjectId(req.query.residentId);
     if (req.query.licensePlate) match.licensePlate = { '$regex': `${req.query.licensePlate}`, '$options': 'i' };
     if (req.query.type) match.type = { '$regex': `${req.query.type}`, '$options': 'i' };
     if (req.query.status) match.status = { '$regex': `${req.query.status}`, '$options': 'i' };
+    console.log(req.query)
 
     let vehicle = await HELPER.filterByField(Vehicle, match, start, limit);
     let total = await HELPER.getTotal(Vehicle, match)
 
     res.send({
         total,
-        vehicle
-        
+        items:vehicle
     })
 })
 
@@ -33,9 +32,8 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     let id = req.params.id;
     const vehicle = await Vehicle.findById({ _id: id })
-    const resident = await Resident.find({_id: vehicle.residentId });
-    result = { vehicle, apartmentName: resident[0].aptName};
-    res.send(result);
+    // const resident = await Resident.find({_id: vehicle.residentId });
+    res.send(vehicle);
 })
 
 // create vehicle
