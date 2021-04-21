@@ -5,6 +5,7 @@ const HELPER = require('../helper');
 const { sendMail } = require('../utils/mail.util')
 const generator = require('generate-password');
 const Resident = require('../models/resident');
+const { createTestAccount } = require('nodemailer');
 
 //get all
 router.get('/', (req, res) => {
@@ -13,50 +14,74 @@ router.get('/', (req, res) => {
 
 // create
 router.post('/:residentId', (req, res) => {
-    var obj = new ResidentAccount(req.body);
-    obj.save().then((account) => {
-        const residentId = req.params.residentId;
-        Resident.findOneAndUpdate({ _id: residentId }, { $set: { accountId: account._id } }, {}, (err, doc) => {
-            if (err) {
-                res.send(HELPER.errorHandler(err, 1000));
-            }
-            res.status(200).send(account)
-        })
-    }).catch((err) => res.send(HELPER.errorHandler(err, 1000)))
-})
-
-//update 
-router.patch('/:id', (req, res) => {
-    let id = req.params.id;
-    ResidentAccount.findByIdAndUpdate({ _id: id }, { $set: req.body }).then(() => res.status(200).send("update successful")).catch((err) => res.send(HELPER.errorHandler(err, 2000)))
-})
-
-//reset Password 
-
-router.post('/resetPass/:residentId', async (req, res) => {
-    const residentId = req.params.residentId;
-    const resident = await Resident.findOne({ _id: residentId });
-    if (!resident.email) {
-        res.status(400).send(HELPER.errorHandler(err, 1001))
-        return;
-    }
-    const id = resident.accountId;
+    // gen password
     const password = generator.generate({
         length: 10,
         numbers: true
     });
-    console.log('password: ', password);
-    ResidentAccount.findByIdAndUpdate({ _id: id }, { $set: { password } }).then(() => {
-        let title = 'Password for new Resident Account';
-        let msg = `Chào ${resident.name}.\nBạn đã reset mật khẩu thành công.\nMật khẩu mới của bạn là: ${password}`
-        sendMail(resident.email, title, msg, (error, res1) => {
-            if (error) {
-                res.status(400).send(HELPER.errorHandler(error, 2001, `Can not send new password to  ${resident.email}. Please try again !`));
-            }
-            res.status(200).send(res1);
-        })
-    }).catch((err) => res.send(HELPER.errorHandler(err, 2000)))
+    req.body.password = password;
 
+    // create resident account
+    var obj = new ResidentAccount(req.body);
+    let result = 'Create account successfully';
+    obj.save()
+        .then((account) => {
+            result = account;
+            const residentId = req.params.residentId;
+            return Resident.findOneAndUpdate({ _id: residentId }, { $set: { accountId: account._id } })
+        }, (err) => res.status(400).send(HELPER.errorHandler(err, 1000)))
+        .then((resident) => {
+            let title = 'Password for new Account';
+            let msg = `Bạn đã tạo tài khoản thành công.\nMật khẩu của bạn là: ${password}`;
+            return sendMail(req.body.username, title, msg)
+        }, (err) => res.status(400).send(HELPER.errorHandler(err, 1000)))
+        .then(mail => {
+            res.send(result);
+        }, (err) => res.status(400).send(HELPER.errorHandler(err, 2001, `Can not send new password to  ${req.body.username}. Please try again !`)))
+})
+
+
+//update 
+router.patch('/:id', (req, res) => {
+    let id = req.params.id;
+    ResidentAccount.findByIdAndUpdate({ _id: id }, { $set: req.body }).then((x) => res.send(x)).catch((err) => res.send(HELPER.errorHandler(err, 2000)))
+})
+
+//reset Password 
+router.post('/resetPass/:residentId', async (req, res) => {
+    const residentId = req.params.residentId;
+    let id = '';
+    const password = generator.generate({
+        length: 10,
+        numbers: true
+    });
+    let result = 'reset successfully';
+    Resident.findOne({ _id: residentId })
+        .then(resident => {
+            result = resident;
+            id = resident.accountId;
+            let title = 'Reset Password';
+            let msg = `Chào ${resident.name}.\nBạn đã reset mật khẩu thành công.\nMật khẩu mới của bạn là: ${password}`
+            return sendMail(resident.email, title, msg);
+        })
+        .then(_ => {
+            return ResidentAccount.findByIdAndUpdate({ _id: id }, { $set: { password } });
+        }, (err) => res.status(400).send(HELPER.errorHandler(err, 2001, `Can not send new password to  ${resident.email}. Please try again !`)))
+        .then(_ => {
+            res.send(result);
+        }, (err) => res.status(400).send(HELPER.errorHandler(err, 2001)))
+})
+
+
+//delete 
+router.delete('/:residentId', (req, res) => {
+    const residentId = req.params.residentId;
+    Resident.findByIdAndUpdate({ _id: residentId }, { accountId: null })
+        .then((resident) => {
+            return ResidentAccount.findByIdAndDelete({ _id: resident.accountId })
+        }, (err) => res.status(400).send(HELPER.errorHandler(err, 3000)))
+        .then((result) => res.send(result),
+            (err) => res.status(400).send(HELPER.errorHandler(err, 3000)))
 })
 
 module.exports = router;

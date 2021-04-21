@@ -17,13 +17,13 @@ router.get('/:id', (req,res) => {
 // create service
 router.post('/', (req, res) => {
     var newService = new Service(req.body);
-    newService.save().then(() => res.status(200).send("create successful")).catch((err) => res.send(err))
+    newService.save().then((x) => res.status(200).send(x)).catch((err) => res.send(err))
 })
 
 //update service
 router.patch('/:id',(req,res) => {
     let id = req.params.id;
-    Service.findByIdAndUpdate({_id:id},{$set:req.body}).then(() => res.status(200).send("update successful")).catch((err) => res.send(err))
+    Service.findByIdAndUpdate({_id:id},{$set:req.body}).then((x) => res.status(200).send(x)).catch((err) => res.send(err))
 })
 
 module.exports = router;

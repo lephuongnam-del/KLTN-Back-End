@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
 router.patch('/:d', (req, res) => {
     let id = req.params.id;
     Vehicle.findByIdAndRemove({ _id: id }, { $set: req.body })
-        .then(() => res.send('update successful'))
+        .then(() => res.send({}))
         .catch((err) => res.send(err))
 })
 
@@ -59,7 +59,7 @@ router.patch('/:d', (req, res) => {
 router.delete('/:id', (req,res) => {
     let id = req.params.id;
     Vehicle.findOneAndRemove({_id:id})
-            .then(() => res.send('delete successful'))
+            .then(() => res.send({}))
             .catch((err) => res.send(err))
 });
 
