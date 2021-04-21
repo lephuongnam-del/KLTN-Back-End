@@ -112,7 +112,7 @@ router.post('/delete', async (req, res) => {
     let ids = req.body.ids;
     for (let i of ids) {
         Vehicle.findOneAndRemove({ residentId: i._id }).then(() => {
-            Resident.findOneAndRemove({ _id: i }).then(() => res.send('deleted'))
+            Resident.findOneAndRemove({ _id: i }).then(() => res.send({}))
 
         })
     }

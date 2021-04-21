@@ -67,7 +67,7 @@ router.post('/delete',async (req, res) => {
                 Vehicle.findOneAndRemove({ residentId: j._id }).then(() => {
                     Resident.findOneAndRemove({ aptId: i }).then(
                         Apartment.findOneAndRemove({blockId:el}).then(
-                            Block.findOneAndRemove({_id:i}).then(() => res.send('deleted'))
+                            Block.findOneAndRemove({_id:i}).then(() => res.send({}))
                         )
                     )
         
