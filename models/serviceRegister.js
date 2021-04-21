@@ -19,7 +19,7 @@ const serviceRegisterSchema = new mongoose.Schema({
         required:true
     },
     amount: {
-        type:Number
+        type:Number 
     }
 
 })
