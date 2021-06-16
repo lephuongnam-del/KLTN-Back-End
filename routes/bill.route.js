@@ -3,28 +3,26 @@ const router = express.Router();
 const Bill = require('../models/bill');
 const HELPER = require('../helper');
 const Resident = require('../models/resident');
-const PaymentMethod = require('../models/paymentMethod');
 const ServiceRegister = require('../models/serviceRegister');
 const Service = require('../models/services');
 const Apartment = require('../models/apartment');
 const Vehicle = require('../models/vehicle');
 const ObjectId = require('mongoose').Types.ObjectId;
-const { SERVICE_IDS } = require('../configs/sys.config')
+const { SERVICE_IDS } = require('../configs/sys.config');
+const moment = require('moment')
 // get all bill
 
 router.get('/', async (req, res) => {
-    console.log(req.query,'filter')
+    console.log(req.query, 'filter')
     const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
     const match = {};
-    if (req.query.status) match.status = { '$regex': `${req.query.status}`, '$options': 'i' };
+    if (req.query.status) match.status = { '$regex': `^${req.query.status}$`, '$options': 'i' };
     if (req.query.apartmentId) match.apartmentId = ObjectId(req.query.apartmentId);
-
+    let month = req.query.month || null;
     let bill = await HELPER.filterByField(Bill, match, start, limit);
-    const result = await formatBill(bill);
-
+    const result = await formatBill(bill, month);
     let totalBill = await HELPER.getTotal(Bill, match);
-
     res.send({
         total: totalBill,
         result: result
@@ -32,18 +30,21 @@ router.get('/', async (req, res) => {
 })
 
 
-formatBill = async (bills) => {
+formatBill = async (bills, month) => {
     let temp = [];
     for (let i of bills) {
         const apartment = await Apartment.find({ _id: i.apartmentId });
-        el = { 
+        el = {
             ...i,
             aptName: apartment[0].name,
             blockId: apartment[0].blockId
         };
         temp.push(el);
     }
-    return temp;
+    return temp.filter(x => {
+        if (!month) return true;
+        return moment(x.date).format('MM-yyyy') === month
+    });
 
 }
 
@@ -59,12 +60,38 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
     let { details, ...rest } = req.body;
-    let newBill = new Bill(rest);
+    const invalidMonth = moment(rest.date).format('MM-yyyy') === moment(rest.date).format('MM-yyyy');
+    if(invalidMonth){
+       res.status(400).send(HELPER.errorHandler('',5555,'Chi phí tháng này đã tồn tại.'))
+       return;
+    }
     const services = await Service.find();
+    const bills = await Bill.find({ apartmentId: ObjectId(req.body.apartmentId) });
+    let billLastMonth;
+    for (let i of bills) {
+        const isNearest = moment(i.date).add(1, 'months').format('MM-yyyy') === moment(rest.date).format('MM-yyyy');
+        if (isNearest) {
+            billLastMonth = i;
+        }
+    }
+    if (!billLastMonth) {
+        billLastMonth = { lastBalance: 0 }
+    }
+    console.log("billLastMonth: ", billLastMonth);
+    rest = {
+        ...rest,
+        balanceFowards: billLastMonth.lastBalance,
+        paidAmount: 0,
+        lastBalance: Number(rest.amount) + billLastMonth.lastBalance,
+        statusBill: 'OPEN'
+    };
+    console.log("rest: ", rest);
+
+    let newBill = new Bill(rest);
     try {
         let bill = await newBill.save();
         let keys = Object.keys(details);
-        for(let el of keys){
+        for (let el of keys) {
             let service = services.find(x => x._id == SERVICE_IDS[el]);
             let tmp = new ServiceRegister({
                 serviceId: SERVICE_IDS[el],
@@ -85,7 +112,6 @@ router.post('/', async (req, res) => {
     }
 })
 
-
 // update bill
 router.patch('/:id', (req, res) => {
     let id = req.params.id;
@@ -99,18 +125,17 @@ router.patch('/:id', (req, res) => {
 // delete bill
 router.post('/delete', async (req, res) => {
     let ids = req.body.ids;
-
-
     for (let i of ids) {
-
         //  const sv = await ServiceRegister.findById({ billId: i });
         ServiceRegister.findOneAndRemove({ billId: i }).then(Bill.findOneAndRemove({ _id: i }).then(() => res.status(200).send({})))
-
-
     }
-
+    Bill.deleteMany({}).then(_ => res.send([]))
 })
 
+// delete bill
+router.post('/deleteAll', async (req, res) => {
+    Bill.deleteMany({}).then(x => res.send(x));
+})
 
 getTotalAmount = async (quantity, price) => {
     let total = 0;

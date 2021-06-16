@@ -12,12 +12,28 @@ const billSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    status:{
-        type:String,
+    balanceFowards: {
+        type: Number,
         required: true
     },
     amount:{
         type:Number,
+        required: true
+    },
+    paidAmount: {
+        type: Number,
+        required: true
+    },
+    lastBalance: {
+        type: Number,
+        required: true
+    },
+    status:{
+        type:String,
+        required: true
+    },
+    statusBill:{
+        type:String,
         required: true
     }
 
