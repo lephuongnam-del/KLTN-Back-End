@@ -5,13 +5,8 @@ const vehicleSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         required:true
     },
-    residentName: {
-        type:String,
-        required:true
-    },
     licensePlate:{
-        type:String,
-        required:true
+        type:String
     },
     price:{
         type:Number,

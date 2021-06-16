@@ -2,10 +2,6 @@ const mongoose = require('mongoose');
 
 
 const serviceRegisterSchema = new mongoose.Schema({
-    residentId:{
-        type: mongoose.Types.ObjectId,
-        required: true
-    },
     serviceId: {
         type: mongoose.Types.ObjectId,
         required:true
@@ -18,8 +14,13 @@ const serviceRegisterSchema = new mongoose.Schema({
         type:Number,
         required:true
     },
+    cost: {
+        type: Number,
+        required: true
+    },
     amount: {
-        type:Number 
+        type:Number,
+        required: true
     }
 
 })

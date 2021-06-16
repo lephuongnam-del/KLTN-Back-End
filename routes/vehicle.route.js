@@ -16,9 +16,6 @@ router.get('/', async (req, res) => {
     if (req.query.residentId) match.residentId = ObjectId(req.query.residentId);
     if (req.query.licensePlate) match.licensePlate = { '$regex': `${req.query.licensePlate}`, '$options': 'i' };
     if (req.query.type) match.type = { '$regex': `${req.query.type}`, '$options': 'i' };
-    if (req.query.status) match.status = { '$regex': `${req.query.status}`, '$options': 'i' };
-    console.log(req.query)
-
     let vehicle = await HELPER.filterByField(Vehicle, match, start, limit);
     let total = await HELPER.getTotal(Vehicle, match)
 
@@ -38,19 +35,15 @@ router.get('/:id', async (req, res) => {
 
 // create vehicle
 router.post('/', async (req, res) => {
-    console.log(req.body);
-    let resident  = await Resident.find({_id: req.body.residentId});
-    console.log(resident)
-    req.body.residentName = resident[0].name;
     let newVehicle = new Vehicle(req.body);
     newVehicle.save().then(vehicle => res.json(vehicle))
         .catch(err => res.send(err))
 })
 
 // update vehicle
-router.patch('/:d', (req, res) => {
+router.patch('/:id', (req, res) => {
     let id = req.params.id;
-    Vehicle.findByIdAndRemove({ _id: id }, { $set: req.body })
+    Vehicle.findOneAndUpdate({ _id: id }, { $set: req.body })
         .then(() => res.send({}))
         .catch((err) => res.send(err))
 })

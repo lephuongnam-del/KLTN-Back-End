@@ -6,47 +6,45 @@ const Resident = require('../models/resident');
 const PaymentMethod = require('../models/paymentMethod');
 const ServiceRegister = require('../models/serviceRegister');
 const Service = require('../models/services');
+const Apartment = require('../models/apartment');
+const Vehicle = require('../models/vehicle');
+const ObjectId = require('mongoose').Types.ObjectId;
+const { SERVICE_IDS } = require('../configs/sys.config')
 // get all bill
 
 router.get('/', async (req, res) => {
-    const start = parseInt(req.body.start) ? parseInt(req.body.start) : 0;
-    const limit = parseInt(req.body.limit) ? parseInt(req.body.limit) : 10;
+    console.log(req.query,'filter')
+    const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
+    const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
     const match = {};
     if (req.query.status) match.status = { '$regex': `${req.query.status}`, '$options': 'i' };
+    if (req.query.apartmentId) match.apartmentId = ObjectId(req.query.apartmentId);
 
     let bill = await HELPER.filterByField(Bill, match, start, limit);
     const result = await formatBill(bill);
-    
+
     let totalBill = await HELPER.getTotal(Bill, match);
 
     res.send({
-        totalBill,
-        result      
+        total: totalBill,
+        result: result
     })
 })
 
 
 formatBill = async (bills) => {
     let temp = [];
-    let totalMoney = 0;
     for (let i of bills) {
-        const resident = await Resident.find({ _id: i.residentId });
-        const payment = await PaymentMethod.find({ _id: i.pmId });
-        const sRegister = await ServiceRegister.find({ billId: i._id });
-        let totalMoney = 0;
-        for (let i of sRegister) {
-            const service = await Service.find({_id:i.serviceId});
-            let total =  await getTotalAmount(parseInt(i.quantity),parseInt( service[0].cost));
-            totalMoney = totalMoney +  total;
-           
-        }
-       
-        el = { ...i, residentName: resident[0].name, paymentName: payment[0].name,totalMoney };
-        temp.push({...el})
-        
+        const apartment = await Apartment.find({ _id: i.apartmentId });
+        el = { 
+            ...i,
+            aptName: apartment[0].name,
+            blockId: apartment[0].blockId
+        };
+        temp.push(el);
     }
     return temp;
-   
+
 }
 
 // get single bill
@@ -59,31 +57,55 @@ router.get('/:id', async (req, res) => {
 
 // create  bill
 
-router.post('/', (req, res) => {
-    let newBill = new Bill(req.body);
-    newBill.save().then((bill) => res.send(bill)).catch((err) => res.send(err))
+router.post('/', async (req, res) => {
+    let { details, ...rest } = req.body;
+    let newBill = new Bill(rest);
+    const services = await Service.find();
+    try {
+        let bill = await newBill.save();
+        let keys = Object.keys(details);
+        for(let el of keys){
+            let service = services.find(x => x._id == SERVICE_IDS[el]);
+            let tmp = new ServiceRegister({
+                serviceId: SERVICE_IDS[el],
+                billId: bill._id,
+                quantity: Number(details[el]),
+                cost: Number(service.cost),
+                amount: Number(service.cost) * Number(details[el])
+            })
+            try {
+                let x = await tmp.save();
+            } catch (error) {
+                res.status(400).send(error);
+            }
+        }
+        res.send(bill);
+    } catch (error) {
+        res.status(400).send(error)
+    }
 })
 
+
 // update bill
-router.patch('/:id',(req,res) => {
-    let id= req.params.id;
-    Bill.findByIdAndUpdate({_Id:id},{$set:req.body} ).then((b) => res.status(200).send(b))
+router.patch('/:id', (req, res) => {
+    let id = req.params.id;
+    Bill.findByIdAndUpdate({ _Id: id }, { $set: req.body }).then((b) => res.status(200).send(b))
         .catch((err) => res.send({
             message: "update fail",
-            errors:err
+            errors: err
         }))
 })
 
 // delete bill
-router.post('/delete', async (req,res) => {
+router.post('/delete', async (req, res) => {
     let ids = req.body.ids;
-    
+
 
     for (let i of ids) {
 
-      //  const sv = await ServiceRegister.findById({ billId: i });
-      ServiceRegister.findOneAndRemove({billId:i}).then( Bill.findOneAndRemove({_id:i}).then(() => res.status(200).send({})))
-      
+        //  const sv = await ServiceRegister.findById({ billId: i });
+        ServiceRegister.findOneAndRemove({ billId: i }).then(Bill.findOneAndRemove({ _id: i }).then(() => res.status(200).send({})))
+
 
     }
 
@@ -94,6 +116,88 @@ getTotalAmount = async (quantity, price) => {
     let total = 0;
     return total = quantity * price;
 }
+
+// get Cost bill by AptId
+
+router.post('/cost', async (req, res) => {
+    const id = req.body.id;
+    console.log('apt ID: ', id);
+    const apt = await Apartment.findById(id).catch(_ => res.status(400).send({ errorCode: 10000, msg: "Can't found apartment" }));
+    const services = await Service.find();
+    const ELECTRONIC = services.find(x => x._id == SERVICE_IDS.electronic);
+    const WATER = services.find(x => x._id == SERVICE_IDS.water);
+    const INTERNET = services.find(x => x._id == SERVICE_IDS.internet);
+    const SERVICE = services.find(x => x._id == SERVICE_IDS.service);
+    const PARKING_MOTORBIKE = services.find(x => x._id == SERVICE_IDS.parking_motobike);
+    const PARKING_CAR = services.find(x => x._id == SERVICE_IDS.parking_car);
+    const PARKING_BYCIRCLE = services.find(x => x._id == SERVICE_IDS.parking_bycircle);
+    const ORTHER = services.find(x => x._id == SERVICE_IDS.orther);
+    const residents = await Resident.find({ aptId: apt._id }).catch(_ => res.status(400).send({ errorCode: 10001, msg: "Can't found any resident in apartment" }));;
+
+    let totalBycircle = 0;
+    for (let i of residents) {
+        let tmp = await Vehicle.find({ residentId: ObjectId(i._id), type: 'BYCIRCLE' });
+        totalBycircle += tmp.length;
+    }
+    let totalMotobike = 0;
+    for (let i of residents) {
+        let tmp = await Vehicle.find({ residentId: ObjectId(i._id), type: 'MOTORBIKE' });
+        totalMotobike += tmp.length;
+    }
+    let totalCar = 0;
+    for (let i of residents) {
+        let tmp = await Vehicle.find({ residentId: ObjectId(i._id), type: 'CAR' });
+        totalCar += tmp.length;
+    }
+
+
+    if (residents.length == 0) {
+        // res.status(400).send({ errorCode: 10001, msg: "Can't found any resident in apartment" })
+    }
+    // const coutMotorBike = await Vehicle.countDocuments({ aptId: apt._id }).catch(_ => res.status(400).send({ errorCode: 10001, msg: "Can't found any resident in apartment" }));;
+
+    res.send({
+        ELECTRONIC: {
+            cost: ELECTRONIC.cost,
+            unit: ELECTRONIC.unit
+        },
+        WATER: {
+            cost: WATER.cost,
+            unit: WATER.unit
+        },
+        INTERNET: {
+            cost: INTERNET.cost,
+            unit: INTERNET.unit,
+            quantity: residents.length
+        },
+        SERVICE: {
+            cost: SERVICE.cost,
+            unit: SERVICE.unit,
+            quantity: Number(apt.area)
+        },
+        PARKING_BYCIRCLE: {
+            cost: PARKING_BYCIRCLE.cost,
+            unit: PARKING_BYCIRCLE.unit,
+            quantity: totalBycircle
+        },
+        PARKING_MOTORBIKE: {
+            cost: PARKING_MOTORBIKE.cost,
+            unit: PARKING_MOTORBIKE.unit,
+            quantity: totalMotobike
+        },
+        PARKING_CAR: {
+            cost: PARKING_CAR.cost,
+            unit: PARKING_CAR.unit,
+            quantity: totalCar
+        },
+        ORTHER: {
+            cost: ORTHER.cost,
+            unit: ORTHER.unit
+        }
+
+    })
+})
+
 
 
 

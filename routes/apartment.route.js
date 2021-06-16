@@ -24,6 +24,7 @@ router.get('/', async (req, res) => {
     });
 });
 
+
 // get single apartment 
 router.get('/:id', async (req, res) => {
     let id = req.params.id;
@@ -40,8 +41,6 @@ router.get('/:id', async (req, res) => {
 
 // create new apartment
 router.post('/', async (req, res) => {
-    const block = await Block.find({ _id: req.body.blockId });
-    req.body.blockName = block[0].name;
     var newApt = new Apartment(req.body);
     newApt.save()
         .then(user => { res.status(200).json(user) })

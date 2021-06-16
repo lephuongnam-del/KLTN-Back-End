@@ -27,10 +27,9 @@ formatServiceRegister = async (sRegister) => {
     let temp = [];
     for( let i of sRegister)
     {
-       const resident = await Resident.find({_id:i.residentId});
        const service = await Service.find({_id:i.serviceId});
        let totalMoney =  await getTotalAmount(parseInt(i.quantity),parseInt( service[0].cost));
-        el= {...i, residentName: resident[0].name, serviceName: service[0].name,totalMoney };      
+        el= {...i, serviceName: service[0].name,totalMoney };      
         temp.push({...el});
     }
     return temp;

@@ -1,16 +1,15 @@
 const mongoose = require('mongoose');
 const billSchema = new mongoose.Schema({
 
-    residentId:{
+    apartmentId:{
         type:mongoose.Types.ObjectId,
         required:true
     },
     pmId: {
-        type:mongoose.Types.ObjectId,
-        required:true   
+        type:mongoose.Types.ObjectId
     },
     date:{
-        type:String,
+        type: Number,
         required: true
     },
     status:{
@@ -18,7 +17,8 @@ const billSchema = new mongoose.Schema({
         required: true
     },
     amount:{
-        type:Number
+        type:Number,
+        required: true
     }
 
 })

@@ -5,11 +5,6 @@ const apartmentSchema = new mongoose.Schema({
         type:mongoose.Types.ObjectId,
         required: true
     },
-    blockName: {
-        type:String,
-        require:true
-       
-    },
     name:{
         type:String,
         required:true
