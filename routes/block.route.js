@@ -9,8 +9,8 @@ router.get('/', async (req, res) => {
     const match = {};
     const start = parseInt(req.query.start) ? parseInt(req.query.start) : 0;
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
-    if(req.query.name) match.name = { '$regex': `${req.query.name}`, '$options': 'i' };
-    
+    if (req.query.name) match.name = { '$regex': `${req.query.name}`, '$options': 'i' };
+
     let blocks = await HELPER.filterByField(Block, match, start, limit);
     let total = await HELPER.getTotal(Block, match);
     res.send({
@@ -36,7 +36,7 @@ router.get('/:id', async (req, res) => {
 
 // create  new information of block
 
-router.post('/', async(req, res) => {
+router.post('/', async (req, res) => {
     console.log(req.body);
     let newBlock = new Block(req.body);
     newBlock.save().then((newBlock) => { res.send(newBlock) }).catch((e) => { res.send(e) });
@@ -44,7 +44,6 @@ router.post('/', async(req, res) => {
 
 //update block
 router.patch('/:id', (req, res) => {
-    console.log(req.body)
     Block.findOneAndUpdate({ _id: req.params.id }, {
         $set: req.body
     }).then(() => {
@@ -54,29 +53,22 @@ router.patch('/:id', (req, res) => {
 
 
 // delete block
-router.post('/delete',async (req, res) => {
-   let ids = req.body.ids;
-   for(let i of ids)
-   {
-        const apartments = await APartment.find({blockId:i})   
-        for(let el of apartments)
-        {
-            const residents =  await Resident.find({aptId:el});
-            for(let j of residents)
-            {
-                Vehicle.findOneAndRemove({ residentId: j._id }).then(() => {
-                    Resident.findOneAndRemove({ aptId: i }).then(
-                        Apartment.findOneAndRemove({blockId:el}).then(
-                            Block.findOneAndRemove({_id:i}).then(() => res.send({}))
-                        )
-                    )
-        
-                })
-            }
+router.delete('/:id', async (req, res) => {
+    let id = req.params.id;
+    const apartments = await APartment.find({ blockId: id });
+    if (apartments.length > 0) {
+        res.status(400).send(HELPER.errorHandler('', 3007 , 'Tồn tại căn hộ thuộc block'))
+        return;
+    }else{
+        try {
+            let result = await Block.findOneAndDelete({ _id: id });
+            res.send(result)
+            return;
+        } catch (error) {
+            res.status(400).send(HELPER.errorHandler(error, 3000 , 'Removed fail !!!'))
+            return;
         }
-
-   }
-
+    }
 });
 
 module.exports = router;

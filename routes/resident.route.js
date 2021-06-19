@@ -6,6 +6,7 @@ const Vehicle = require('../models/vehicle');
 const Block = require('../models/block');
 const HELPER = require('../helper');
 const ObjectId = require('mongoose').Types.ObjectId;
+const ResidentAccount = require('../models/resident-acount');
 
 //get all resident
 router.get('/', async (req, res) => {
@@ -51,41 +52,26 @@ router.get('/:id', async (req, res) => {
 // const generator = require('generate-password');
 // create new resident
 router.post('/', async (req, res) => {
-    // const apartment = await Apartment.find({ _id: req.body.aptId });
-    // const block = await Block.find({ _id: req.body.blockId });
-    // req.body.aptName = apartment[0].name;
-    // req.body.blockName = block[0].name;
-    // if (req.body.email) {
-    //     const password = generator.generate({
-    //         length: 10,
-    //         numbers: true
-    //     });
-    //     console.log('password: ',password);
-    //     let title = 'Password for new Resident Account';
-    //     let msg = `Chào ${req.body.name}.
-    //      Bạn đã đăng ký thành công tài khoản mới.
-    //      Mật khẩu mới của bạn là: ${password}
-    //     `
-    //     sendMail(req.body.email, title, msg, (error, res1) => {
-    //         if(error){
-    //             res.status(400).send({
-    //                 code:1000,
-    //                 error,
-    //                 msg:`Can not send new password to  ${req.body.email}. Please try again !`
-    //             })
-    //         }else{
-    //             console.log('res1: ',res1);
-    //             res.status(200).send(res1);
-    //         }
-    //     })
-    // }
-
     var newResident = new Resident(req.body);
-    newResident.save()
-        .then(user => { res.status(200).json(user) })
-        .catch(function (err) {
-            res.status(400).send(HELPER.errorHandler(err, 1000))
-        })
+    try {
+        let exist = await Resident.find({ aptId: ObjectId(req.body.aptId), type: '1' });
+        console.log('exist',exist, req.body.type == '1')
+        if (exist.length > 0 && req.body.type == '1') {
+            res.status(400).send(HELPER.errorHandler('', 1003, 'Căn hộ tồn đã tồn tại chủ hộ'));
+            return;
+        }
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 1004, 'Không tìm thấy căn hộ'));
+        return;
+    }
+    try {
+        let result = await newResident.save();
+        res.send(result);
+        return;
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 1000))
+        return;
+    }
 })
 
 
@@ -107,15 +93,37 @@ router.patch('/:id', async (req, res) => {
 
 
 
-// delete resident
-router.post('/delete', async (req, res) => {
-    let ids = req.body.ids;
-    for (let i of ids) {
-        Vehicle.findOneAndRemove({ residentId: i._id }).then(() => {
-            Resident.findOneAndRemove({ _id: i }).then(() => res.send({}))
-
-        })
+router.delete('/:id', async (req, res) => {
+    let id = req.params.id;
+    const lists = await Vehicle.find({ residentId: id });
+    if (lists.length > 0) {
+        res.status(400).send(HELPER.errorHandler('', 3007, 'Tồn tại xe thuộc cư dân'))
+        return;
+    } else {
+        try {
+            let resident = await Resident.findById({ _id: id });
+            if (resident.accountId) {
+                let x = await ResidentAccount.findByIdAndDelete({ _id: resident.accountId })
+            }
+            let result = await Resident.findOneAndDelete({ _id: id });
+            res.send(result)
+            return;
+        } catch (error) {
+            res.status(400).send(HELPER.errorHandler(error, 3000, 'Removed fail !!!'))
+            return;
+        }
     }
+})
+
+router.post('/deleteall', async (req, res) => {
+    try {
+        let x = await Resident.deleteMany({});
+        let u = await ResidentAccount.deleteMany({});
+        res.send({x,u});
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 3000, 'Removed fail !!!'))
+    }
+
 })
 
 module.exports = router;

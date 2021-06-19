@@ -6,6 +6,7 @@ const Resident = require('../models/resident');
 const ServiceRegister = require('../models/serviceRegister');
 const Service = require('../models/services');
 const Apartment = require('../models/apartment');
+const Block = require('../models/block');
 const Vehicle = require('../models/vehicle');
 const ObjectId = require('mongoose').Types.ObjectId;
 const { SERVICE_IDS } = require('../configs/sys.config');
@@ -52,7 +53,27 @@ formatBill = async (bills, month) => {
 router.get('/:id', async (req, res) => {
     let id = req.params.id;
     let bill = await Bill.findById({ _id: id });
+    let serviceRegister = await ServiceRegister.find({ billId: ObjectId(bill._id) });
+    let resident = await Resident.find({ aptId: ObjectId(bill.apartmentId) });
+    let apartment = await Apartment.findById({ _id: ObjectId(bill.apartmentId) });
+    let block = await Block.findById({ _id: ObjectId(apartment.blockId) });
 
+    // service
+    let services = {};
+    for (let key in SERVICE_IDS) {
+        let tmp = serviceRegister.find(x => x.serviceId == SERVICE_IDS[key]);
+        if (tmp) {
+            services[key] = tmp;
+        }
+    }
+
+    res.send({
+        bill,
+        serviceRegister: services,
+        resident,
+        block,
+        apartment
+    });
 })
 
 
@@ -60,15 +81,16 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
     let { details, ...rest } = req.body;
-    const invalidMonth = moment(rest.date).format('MM-yyyy') === moment(rest.date).format('MM-yyyy');
-    if(invalidMonth){
-       res.status(400).send(HELPER.errorHandler('',5555,'Chi phí tháng này đã tồn tại.'))
-       return;
-    }
+
     const services = await Service.find();
     const bills = await Bill.find({ apartmentId: ObjectId(req.body.apartmentId) });
     let billLastMonth;
     for (let i of bills) {
+        const invalidMonth = moment(rest.date).format('MM-yyyy') === moment(i.date).format('MM-yyyy');
+        if (invalidMonth) {
+            res.status(400).send(HELPER.errorHandler('', 5555, 'Chi phí tháng này đã tồn tại.'))
+            return;
+        }
         const isNearest = moment(i.date).add(1, 'months').format('MM-yyyy') === moment(rest.date).format('MM-yyyy');
         if (isNearest) {
             billLastMonth = i;
@@ -115,7 +137,7 @@ router.post('/', async (req, res) => {
 // update bill
 router.patch('/:id', (req, res) => {
     let id = req.params.id;
-    Bill.findByIdAndUpdate({ _Id: id }, { $set: req.body }).then((b) => res.status(200).send(b))
+    Bill.findByIdAndUpdate({ _id: id }, { $set: req.body }).then((b) => res.status(200).send(b))
         .catch((err) => res.send({
             message: "update fail",
             errors: err
@@ -123,13 +145,15 @@ router.patch('/:id', (req, res) => {
 })
 
 // delete bill
-router.post('/delete', async (req, res) => {
-    let ids = req.body.ids;
-    for (let i of ids) {
-        //  const sv = await ServiceRegister.findById({ billId: i });
-        ServiceRegister.findOneAndRemove({ billId: i }).then(Bill.findOneAndRemove({ _id: i }).then(() => res.status(200).send({})))
+router.delete('/:id', async (req, res) => {
+    let id = req.params.id;
+    try {
+        let x = await Bill.findOneAndDelete({ _id: id })
+        res.send(x);
+        return;
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 3000, 'Removed fail !!!'))
     }
-    Bill.deleteMany({}).then(_ => res.send([]))
 })
 
 // delete bill

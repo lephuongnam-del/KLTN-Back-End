@@ -60,24 +60,45 @@ router.patch('/:id', (req, res) => {
 })
 
 
-//delete apartment
-router.post('/delete', async (req, res) => {
-    let ids = req.body.ids;
+// //delete apartment
+// router.post('/delete', async (req, res) => {
+//     let ids = req.body.ids;
 
-    for (let i of ids) {
+//     for (let i of ids) {
 
-        const residents = await Resident.find({ aptId: i });
-        for (let j of residents) {
-            Vehicle.findOneAndRemove({ residentId: j._id }).then(() => {
-                Resident.findOneAndRemove({ aptId: i }).then(
-                    Apartment.findOneAndRemove({_id:i}).then(() => res.send({}))
-                )
+//         const residents = await Resident.find({ aptId: i });
+//         for (let j of residents) {
+//             Vehicle.findOneAndRemove({ residentId: j._id }).then(() => {
+//                 Resident.findOneAndRemove({ aptId: i }).then(
+//                     Apartment.findOneAndRemove({_id:i}).then(() => res.send({}))
+//                 )
 
-            })
+//             })
+//         }
+
+//     }
+
+// })
+
+
+// delete apartment
+
+router.delete('/:id', async (req, res) => {
+    let id = req.params.id;
+    const lists = await Resident.find({ aptId: id });
+    if (lists.length > 0) {
+        res.status(400).send(HELPER.errorHandler('', 3007 , 'Tồn tại cư dân thuộc căn hộ'))
+        return;
+    }else{
+        try {
+            let result = await Apartment.findOneAndDelete({ _id: id });
+            res.send(result)
+            return;
+        } catch (error) {
+            res.status(400).send(HELPER.errorHandler(error, 3000 , 'Removed fail !!!'))
+            return;
         }
-
     }
-
 })
 
 module.exports = router;

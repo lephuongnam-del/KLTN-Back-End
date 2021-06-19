@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 
     res.send({
         total,
-        items:vehicle
+        items: vehicle
     })
 })
 
@@ -49,11 +49,15 @@ router.patch('/:id', (req, res) => {
 })
 
 // delete vehicle
-router.delete('/:id', (req,res) => {
+router.delete('/:id', async (req, res) => {
     let id = req.params.id;
-    Vehicle.findOneAndRemove({_id:id})
-            .then(() => res.send({}))
-            .catch((err) => res.send(err))
+    try {
+        let result = await Vehicle.findOneAndDelete({ _id: id });
+        res.send(result);
+        return;
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 3000, 'Removed fail !!!'))
+    }
 });
 
 module.exports = router;
