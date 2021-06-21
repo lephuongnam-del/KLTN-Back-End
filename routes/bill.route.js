@@ -95,6 +95,10 @@ router.post('/', async (req, res) => {
         if (isNearest) {
             billLastMonth = i;
         }
+        if (i.status == 'PENDING'){
+            res.status(400).send(HELPER.errorHandler('', 5556, 'Tồn tại chi phí đang chờ duyệt. Vui lòng duyệt trước khi tạo chi phí mới.'))
+            return;
+        }
     }
     if (!billLastMonth) {
         billLastMonth = { lastBalance: 0 }

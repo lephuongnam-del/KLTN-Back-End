@@ -6,7 +6,7 @@ const billSchema = new mongoose.Schema({
         required:true
     },
     pmId: {
-        type:mongoose.Types.ObjectId
+        type:String
     },
     date:{
         type: Number,

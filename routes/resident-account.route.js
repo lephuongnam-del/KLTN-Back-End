@@ -72,6 +72,32 @@ router.post('/resetPass/:residentId', async (req, res) => {
         }, (err) => res.status(400).send(HELPER.errorHandler(err, 2001)))
 })
 
+// login
+router.post('/resident/login', async (req, res) => {
+    console.log(req.body)
+    try {
+        let tmp = await ResidentAccount.find({ username: req.body.username });
+        if (tmp.length > 0) {
+            if (tmp[0].password == req.body.password) {
+                let resident = await Resident.find({ accountId: tmp[0]._id });
+                res.send({
+                    account: tmp[0]._doc,
+                    resident: resident[0]
+                });
+                return;
+            } else {
+                res.status(400).send(HELPER.errorHandler('', 5003, 'Mật khẩu không chính xác'))
+                return;
+            }
+        } else {
+            res.status(400).send(HELPER.errorHandler('', 5001, 'Email không tồn tại'))
+            return;
+        }
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 5002, 'Login fail'));
+        return;
+    }
+})
 
 //delete 
 router.delete('/:residentId', (req, res) => {

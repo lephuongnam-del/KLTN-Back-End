@@ -24,8 +24,7 @@ const residentSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        trim: true,
-        unique: true
+        trim: true
     }, 
     dateOfBirth:{
         type: Number,

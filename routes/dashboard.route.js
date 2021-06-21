@@ -25,13 +25,13 @@ router.get('/', async (req, res) => {
         approve: []
     }
     billInMonth.forEach(el => {
-        if(el?.status == 'NOT_APPROVE'){
+        if (el?.status == 'NOT_APPROVE') {
             billInfos.not_approve.push(el);
         }
-        if(el?.status == 'PENDING'){
+        if (el?.status == 'PENDING') {
             billInfos.pending.push(el);
         }
-        if(el?.status == 'APPROVE'){
+        if (el?.status == 'APPROVE') {
             billInfos.approve.push(el);
         }
     })
@@ -43,5 +43,24 @@ router.get('/', async (req, res) => {
         resident: resident.length,
         billInfos
     })
+})
+
+router.get('/mobile/:id', async (req, res) => {
+    try {
+        let tmp = await Resident.findById({ _id: req.params.id });
+        let block = await Block.findById({ _id: tmp.blockId });
+        let apt = await Apartment.findById({ _id: tmp.aptId });
+        let bill = await Bill.find({apartmentId: tmp.aptId});
+        res.send({
+            name: tmp.name,
+            block: block.name,
+            apt: apt.name,
+            bill: bill.length > 0 ? bill[bill.length-1] :  {}
+        });
+        return;
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 5003, 'error'));
+        return;
+    }
 })
 module.exports = router;
