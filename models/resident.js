@@ -22,10 +22,6 @@ const residentSchema = new mongoose.Schema({
     phoneNumber: {
         type: String
     },
-    email: {
-        type: String,
-        trim: true
-    }, 
     dateOfBirth:{
         type: Number,
         required: true
@@ -33,8 +29,20 @@ const residentSchema = new mongoose.Schema({
     note: {
         type: String
     },
-    accountId: {
-        type: mongoose.Types.ObjectId
+    // account
+    email: {
+        type: String
+    }, 
+    password: {
+        type: String,
+        trim: true
+    },
+    avatarUrl:{
+        type: String
+    },
+    hasAccount: {
+        type: Boolean,
+        required: true
     }
 })
 

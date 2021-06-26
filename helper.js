@@ -1,3 +1,24 @@
+const filter = async (schema, match, start, limit) => {
+    const aggregationPaginated = [
+        {
+            $match: match
+        },
+        {
+            $facet: {
+                items: [{ $skip: start }, { $limit: start + limit }],
+                total: [
+                    {
+                        $count: 'count'
+                    }
+                ]
+            }
+        }
+    ];
+    const result = await schema.aggregate(aggregationPaginated);
+    return result;
+
+}
+
 
 const filterByField = async (schema, match, start, limit) => {
 
@@ -62,4 +83,5 @@ module.exports = {
     getTotal,
     successHandler,
     errorHandler,
+    filter
 }

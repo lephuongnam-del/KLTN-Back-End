@@ -11,12 +11,17 @@ router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) ? parseInt(req.query.limit) : 10;
     if (req.query.name) match.name = { '$regex': `${req.query.name}`, '$options': 'i' };
 
-    let blocks = await HELPER.filterByField(Block, match, start, limit);
-    let total = await HELPER.getTotal(Block, match);
+    // let blocks = await HELPER.filterByField(Block, match, start, limit);
+    // let total = await HELPER.getTotal(Block, match);
+    // res.send({
+    //     total,
+    //     items: blocks
+    // });
+    let v = await HELPER.filter(Block, match, start, limit);
     res.send({
-        total,
-        items: blocks
-    });
+        total: v[0].total.length > 0 ? v[0].total[0].count : 0,
+        items: v[0].items
+    })
 })
 
 // get single block

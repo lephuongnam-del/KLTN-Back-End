@@ -6,7 +6,6 @@ const Vehicle = require('../models/vehicle');
 const Block = require('../models/block');
 const HELPER = require('../helper');
 const ObjectId = require('mongoose').Types.ObjectId;
-const ResidentAccount = require('../models/resident-acount');
 
 //get all resident
 router.get('/', async (req, res) => {
@@ -19,26 +18,13 @@ router.get('/', async (req, res) => {
     if (req.query.aptId) match.aptId = ObjectId(req.query.aptId);
     if (req.query.blockId) match.blockId = ObjectId(req.query.blockId);
 
-    const residents = await HELPER.filterByField(Resident, match, start, limit);
-    const total = await HELPER.getTotal(Resident, match);
-    const items = await formatResident(residents);
+    let v = await HELPER.filter(Resident, match, start, limit);
     res.send({
-        total,
-        items
+        total: v[0].total.length > 0 ? v[0].total[0].count : 0,
+        items: v[0].items
     })
 });
 
-formatResident = async (residents) => {
-    tmp = [];
-    for (let i of residents) {
-        block = await Block.find({ _id: i.blockId });
-        apt = await Apartment.find({ _id: i.aptId });
-        blockName = block[0]?.name;
-        aptName = apt[0]?.name;
-        tmp.push({ ...i, blockName, aptName });
-    }
-    return tmp;
-}
 // get single resident
 router.get('/:id', async (req, res) => {
     let id = req.params.id;
@@ -48,28 +34,34 @@ router.get('/:id', async (req, res) => {
     res.send(result);
 })
 
-// const { sendMail } = require('../utils/mail.util')
-// const generator = require('generate-password');
-// create new resident
+
 router.post('/', async (req, res) => {
+
+    // add account
+    let data = req.body;
+    data.password = "";
+    data.avatarUrl = "";
+    data.hasAccount = false;
     var newResident = new Resident(req.body);
+    // end add account
+
     try {
         let exist = await Resident.find({ aptId: ObjectId(req.body.aptId), type: '1' });
-        console.log('exist',exist, req.body.type == '1')
         if (exist.length > 0 && req.body.type == '1') {
             res.status(400).send(HELPER.errorHandler('', 1003, 'Căn hộ tồn đã tồn tại chủ hộ'));
             return;
         }
-    } catch (error) {
-        res.status(400).send(HELPER.errorHandler(error, 1004, 'Không tìm thấy căn hộ'));
-        return;
-    }
-    try {
+        let existEmail = await Resident.find({ email: req.body.email ? req.body.email : '-1' });
+        if (existEmail.length > 0) {
+            res.status(400).send(HELPER.errorHandler('', 1004, 'Email đã tồn tại'));
+            return;
+        }
+        //  save
         let result = await newResident.save();
         res.send(result);
         return;
     } catch (error) {
-        res.status(400).send(HELPER.errorHandler(error, 1000))
+        res.status(400).send(HELPER.errorHandler(error, 1000));
         return;
     }
 })
@@ -78,19 +70,38 @@ router.post('/', async (req, res) => {
 // update resident
 router.patch('/:id', async (req, res) => {
     let id = req.params.id;
-    const apartment = await Apartment.find({ _id: req.body.aptId });
-    const block = await Block.find({ _id: req.body.blockId });
-    req.body.aptName = apartment[0].name;
-    req.body.blockName = block[0].name;
-    console.log(req.body)
-
-    Resident.findOneAndUpdate({ _id: id }, { $set: req.body }, {}, (err, doc) => {
-        if (err)
-            res.status(400).send(HELPER.errorHandler(err, 2000))
-        res.status(200).send(doc)
-    })
+    let data = req.body;
+    try {
+        let exist = await Resident.find({ aptId: ObjectId(data.aptId), type: '1' });
+        if (exist.length > 0 && data.type == '1' && exist[0]._id != id) {
+            res.status(400).send(HELPER.errorHandler('', 1003, 'Căn hộ tồn đã tồn tại chủ hộ'));
+            return;
+        }
+        let existEmail = await Resident.find({ email: data.email ? data.email : '-1' });
+        if (existEmail.length > 0 && existEmail[0]._id != id) {
+            res.status(400).send(HELPER.errorHandler('', 1004, 'Email đã tồn tại'));
+            return;
+        }
+        //  save
+        let result = await Resident.findOneAndUpdate({ _id: id }, { $set: data })
+        res.send(result);
+        return;
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 2000));
+        return;
+    }
 })
 
+
+
+router.delete('/deleteAll', async (req, res) => {
+    try {
+        let x = await Resident.deleteMany({});
+        res.send(x);
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 3000))
+    }
+})
 
 
 router.delete('/:id', async (req, res) => {
@@ -101,29 +112,158 @@ router.delete('/:id', async (req, res) => {
         return;
     } else {
         try {
-            let resident = await Resident.findById({ _id: id });
-            if (resident.accountId) {
-                let x = await ResidentAccount.findByIdAndDelete({ _id: resident.accountId })
-            }
             let result = await Resident.findOneAndDelete({ _id: id });
             res.send(result)
             return;
         } catch (error) {
-            res.status(400).send(HELPER.errorHandler(error, 3000, 'Removed fail !!!'))
+            res.status(400).send(HELPER.errorHandler(error, 3000))
             return;
         }
     }
 })
 
-router.post('/deleteall', async (req, res) => {
-    try {
-        let x = await Resident.deleteMany({});
-        let u = await ResidentAccount.deleteMany({});
-        res.send({x,u});
-    } catch (error) {
-        res.status(400).send(HELPER.errorHandler(error, 3000, 'Removed fail !!!'))
-    }
 
+// account
+const { sendMail } = require('../utils/mail.util')
+const generator = require('generate-password');
+router.post('/createAccount/:id', async (req, res) => {
+    let id = req.params.id;
+    // gen password
+    const password = generator.generate({
+        length: 10,
+        numbers: true
+    })
+    try {
+        let resident = await Resident.findById({ _id: id });
+        // send Email
+        let title = 'Password for new Resident account';
+        let msg = `Chào ${resident.name}.\n\nBạn đã tạo tài khoản thành công.\n\nMật khẩu của bạn là:\n\n ${password}`;
+        let mailResult = await sendMail(resident.email, title, msg);
+        if (mailResult.error) {
+            res.status(400).send(HELPER.errorHandler(mailResult.error, 1008, 'Gửi mail thất bại'));
+            return;
+        }
+        // update resident
+        let result = await Resident.findOneAndUpdate({ _id: id }, {
+            $set: {
+                password: password,
+                avatarUrl: "",
+                hasAccount: true
+            }
+        })
+        res.send(result);
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 1000));
+        return;
+    }
 })
 
+router.post('/resetPassword/:id', async (req, res) => {
+    let id = req.params.id;
+    // gen password
+    const password = generator.generate({
+        length: 10,
+        numbers: true
+    })
+    try {
+        let resident = await Resident.findById({ _id: id });
+        // send Email
+        let title = 'Reset password';
+        let msg = `Chào ${resident.name}.\n\nMật khẩu của bạn đã được reset.\n\nMật khẩu mới của bạn là:\n\n ${password}`;
+        let mailResult = await sendMail(resident.email, title, msg);
+        if (mailResult.error) {
+            res.status(400).send(HELPER.errorHandler(mailResult.error, 1008, 'Gửi mail thất bại'));
+            return;
+        }
+        // update resident
+        let result = await Resident.findOneAndUpdate({ _id: id }, {
+            $set: {
+                password: password
+            }
+        })
+        res.send(result);
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 1000));
+        return;
+    }
+})
+
+router.delete('/deleteAccount/:id', async (req, res) => {
+    let id = req.params.id;
+    try {
+        let result = await Resident.findOneAndUpdate({ _id: id }, {
+            $set: {
+                password: "",
+                avatarUrl: "",
+                hasAccount: false
+            }
+        })
+        res.send(result)
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 3000, 'Removed account fail !!!'))
+        return;
+    }
+})
+// mobile login
+router.post('/mobile/login', async (req, res) => {
+    let data = req.body;
+    // gen password
+    try {
+        let resident = await Resident.find({ email: data.email });
+        if (resident.length == 0) {
+            res.status(400).send(HELPER.errorHandler('', 5000, 'Email không tồn tại'));
+            return;
+        }
+        if (resident[0].password != data.password) {
+            res.status(400).send(HELPER.errorHandler('', 5001, 'Mật khẩu không chính xác'));
+            return;
+        }
+        res.send(resident[0]);
+        return;
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 5002, 'Đăng nhập thất bại'));
+        return;
+    }
+})
+
+router.post('/mobile/resetPassword', async (req, res) => {
+    const email = req.body.email;
+
+
+    // let id = req.params.id;
+    // gen password
+    const password = generator.generate({
+        length: 10,
+        numbers: true
+    })
+    try {
+        let findEmail = await Resident.find({ email });
+        console.log(findEmail)
+        if (findEmail.length == 0) {
+            res.status(400).send(HELPER.errorHandler('', 5000, 'Email không tồn tại'));
+            return;
+        }
+        const id = findEmail[0]._id;
+        console.log(id)
+        let resident = await Resident.findById({ _id: id });
+        // send Email
+        let title = 'Reset password';
+        let msg = `Chào ${resident.name}.\n\nMật khẩu của bạn đã được reset.\n\nMật khẩu mới của bạn là:\n\n ${password}`;
+        let mailResult = await sendMail(resident.email, title, msg);
+        if (mailResult.error) {
+            res.status(400).send(HELPER.errorHandler(mailResult.error, 1008, 'Gửi mail thất bại'));
+            return;
+        }
+        // update resident
+        let result = await Resident.findOneAndUpdate({ _id: id }, {
+            $set: {
+                password: password
+            }
+        })
+        res.send(result);
+    } catch (error) {
+        res.status(400).send(HELPER.errorHandler(error, 1000));
+        return;
+    }
+})
 module.exports = router;

@@ -21,12 +21,20 @@ router.get('/', async (req, res) => {
     if (req.query.status) match.status = { '$regex': `^${req.query.status}$`, '$options': 'i' };
     if (req.query.apartmentId) match.apartmentId = ObjectId(req.query.apartmentId);
     let month = req.query.month || null;
-    let bill = await HELPER.filterByField(Bill, match, start, limit);
-    const result = await formatBill(bill, month);
-    let totalBill = await HELPER.getTotal(Bill, match);
+    if(req.query.month == '01-1970'){
+        month = null;
+    }
+
+    let v = await HELPER.filter(Bill, match, start, limit);
+    const tmpResult = {
+        total: v[0].total.length > 0 ? v[0].total[0].count : 0,
+        items: v[0].items
+    }
+
+    const result = await formatBill(tmpResult.items, month);
     res.send({
-        total: totalBill,
-        result: result
+        total: tmpResult.total,
+        items: result
     })
 })
 
@@ -46,7 +54,10 @@ formatBill = async (bills, month) => {
         if (!month) return true;
         return moment(x.date).format('MM-yyyy') === month
     });
-
+    // return bills.filter(x => {
+    //     if (!month) return true;
+    //     return moment(x.date).format('MM-yyyy') === month
+    // });
 }
 
 // get single bill
@@ -95,7 +106,7 @@ router.post('/', async (req, res) => {
         if (isNearest) {
             billLastMonth = i;
         }
-        if (i.status == 'PENDING'){
+        if (i.status == 'PENDING') {
             res.status(400).send(HELPER.errorHandler('', 5556, 'Tồn tại chi phí đang chờ duyệt. Vui lòng duyệt trước khi tạo chi phí mới.'))
             return;
         }

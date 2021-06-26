@@ -16,12 +16,11 @@ router.get('/', async (req, res) => {
     if (req.query.residentId) match.residentId = ObjectId(req.query.residentId);
     if (req.query.licensePlate) match.licensePlate = { '$regex': `${req.query.licensePlate}`, '$options': 'i' };
     if (req.query.type) match.type = { '$regex': `${req.query.type}`, '$options': 'i' };
-    let vehicle = await HELPER.filterByField(Vehicle, match, start, limit);
-    let total = await HELPER.getTotal(Vehicle, match)
 
+    let v = await HELPER.filter(Vehicle, match, start, limit);
     res.send({
-        total,
-        items: vehicle
+        total: v[0].total.length > 0 ? v[0].total[0].count : 0,
+        items: v[0].items
     })
 })
 

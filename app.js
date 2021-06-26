@@ -23,7 +23,6 @@ const paymentRoute = require('./routes/paymentMethod.route');
 const billRoute = require('./routes/bill.route');
 const dashboardRoute = require('./routes/dashboard.route');
 const employeeRoute = require('./routes/user.route');
-const residentAccountRouter = require('./routes/resident-account.route');
 
 
 //use routes
@@ -36,7 +35,6 @@ app.use('/api/serviceRegister', serviceRegisterRoute);
 app.use('/api/payment', paymentRoute);
 app.use('/api/bill', billRoute);
 app.use('/api/dashboard', dashboardRoute);
-app.use('/api/resident-account', residentAccountRouter);
 app.use('/api/employee', employeeRoute);
 
 // enable CORS

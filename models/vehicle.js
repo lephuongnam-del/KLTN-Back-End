@@ -12,10 +12,6 @@ const vehicleSchema = new mongoose.Schema({
         type:Number,
         required:true
     },
-    status:{
-        type:String,
-        default:false
-    },
     type: {
         type:String,
         required:true

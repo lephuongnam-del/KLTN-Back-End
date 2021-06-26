@@ -16,12 +16,17 @@ router.get('/', async (req, res) => {
     if (req.query.name) match.name = { '$regex': `${req.query.name}`, '$options': 'i' };
     if (req.query.blockId) match.blockId = ObjectId(req.query.blockId);
 
-    let apartments = await HELPER.filterByField(Apartment, match, start, limit);
-    let total = await HELPER.getTotal(Apartment, match);
+    // let apartments = await HELPER.filterByField(Apartment, match, start, limit);
+    // let total = await HELPER.getTotal(Apartment, match);
+    // res.send({
+    //     total,
+    //     items: apartments
+    // });
+    let v = await HELPER.filter(Apartment, match, start, limit);
     res.send({
-        total,
-        items: apartments
-    });
+        total: v[0].total.length > 0 ? v[0].total[0].count : 0,
+        items: v[0].items
+    })
 });
 
 

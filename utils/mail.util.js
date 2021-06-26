@@ -2,7 +2,7 @@
 var nodemailer = require('nodemailer');
 var { SYS_ACCOUNT } = require('../configs/sys.config')
 
-const sendMail =  (email, title, msg) => {
+const sendMail = async (email, title, msg) => {
     // console.log(email, title, msg)
     var transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -18,8 +18,13 @@ const sendMail =  (email, title, msg) => {
         subject: title,
         text: msg
     };
-
-    return transporter.sendMail(mailOptions);
+    console.log('mailOptions: ',mailOptions)
+    try {
+        let result = await transporter.sendMail(mailOptions);
+        return result;
+    } catch (error) {
+        return { error };
+    }
 }
 
 module.exports = {
