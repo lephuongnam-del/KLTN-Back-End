@@ -4,7 +4,7 @@ const Vehicle = require('../models/vehicle');
 const HELPER = require('../helper');
 const Resident = require('../models/resident');
 const ObjectId = require('mongoose').Types.ObjectId;
-
+const Apartment = require('../models/apartment');
 
 
 //get all vehicle
@@ -31,6 +31,24 @@ router.get('/:id', async (req, res) => {
     // const resident = await Resident.find({_id: vehicle.residentId });
     res.send(vehicle);
 })
+
+//get vehicle by apartment id
+
+router.get('/mobile/:aptId', async (req,res) => {
+    let aptId= req.params.aptId;
+    let vehicle = [];
+    const residentList = await Resident.find({ aptId: aptId});
+    for (let i of residentList) {
+        x = await Vehicle.find({ residentId: i._id });
+        v= [...x]
+        result= {  v,residentName: i.name,total: x.length}
+        console.log(result)
+        vehicle.push({...result})
+    }
+    res.send(vehicle);
+
+})
+
 
 // create vehicle
 router.post('/', async (req, res) => {

@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
     if (req.query.status) match.status = { '$regex': `^${req.query.status}$`, '$options': 'i' };
     if (req.query.apartmentId) match.apartmentId = ObjectId(req.query.apartmentId);
     let month = req.query.month || null;
-    if(req.query.month == '01-1970'){
+    if (req.query.month == '01-1970') {
         month = null;
     }
 
@@ -87,6 +87,14 @@ router.get('/:id', async (req, res) => {
     });
 })
 
+// get bill by ID apartment
+router.get('/mobile/:aptId',async (req, res) => {
+    let aptId = req.params.aptId;
+
+    const Bills= await Bill.find({apartmentId:aptId});
+    res.send(Bills);
+    
+})
 
 // create  bill
 
